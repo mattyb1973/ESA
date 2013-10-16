@@ -3,9 +3,33 @@
 <head>
     <meta charset="utf-8" />
     <title>Hello space!</title>
-	<script src="jquery-1.10.2.min.js" type="text/javascript"></script>
-    <script src="highcharts-3.0.2.min.js" type="text/javascript"></script>
+	<script src="scripts/jquery-1.10.2.min.js" type="text/javascript"></script>
+    <script src="scripts/highcharts-3.0.2.min.js" type="text/javascript"></script>
 	<script type="text/javascript">
+		$.event.special.tap = {
+		  setup: function() {
+			var self = this,
+			  $self = $(self);
+
+			// Bind touch start
+			$self.on('touchstart', function(startEvent) {
+			  // Save the target element of the start event
+			  var target = startEvent.target;
+
+			  // When a touch starts, bind a touch end handler exactly once,
+			  $self.one('touchend', function(endEvent) {
+				// When the touch end event fires, check if the target of the
+				// touch end is the same as the target of the start, and if
+				// so, fire a click.
+				if (target == endEvent.target) {
+				  $.event.simulate('tap', self, endEvent);
+				}
+			  });
+			});
+		  }
+		};
+
+		
 		$(function () {
 			$('#container').highcharts({
 				title: {
@@ -53,12 +77,20 @@
 					data: [3.9, 4.2, 5.7, 8.5, 11.9, 15.2, 17.0, 16.6, 14.2, 10.3, 6.6, 4.8]
 				}]
 			});
+			
+			$('#test-click').on('touchstart', function () {
+				$(this).text('Tapped');
+			});
+			$('#test-click').on('click', function () {
+				$(this).text('Clicked');
+			});
 		});
     
 	</script>
 </head>
 <body>
     <h1>Hello space!</h1>
-	<div id="container" style="width: 300px; height: 400px;"></div>
+	<div id="container" style="width: 600px; height: 400px;"></div>
+	<a href="#" id="test-click" style="display: block; margin: 50px auto 0; width: 50px; height: 50px; background: red; color: #fff; line-hight: 50px; text-align: center;">Test</a>
 </body>
 </html>

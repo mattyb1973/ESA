@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8" />
     <title>Hello space!</title>
-	<script src="scripts/jquery-1.10.2.min.js" type="text/javascript"></script>
-    <script src="scripts/highcharts-3.0.2.min.js" type="text/javascript"></script>
+	<script src="jquery-1.10.2.min.js" type="text/javascript"></script>
+    <script src="highcharts-3.0.2.min.js" type="text/javascript"></script>
 	<script type="text/javascript">
 		$.event.special.tap = {
 		  setup: function() {
@@ -80,9 +80,11 @@
 			
 			$('#test-click').on('touchstart', function () {
 				$(this).text('Tapped');
+				return false;
 			});
 			$('#test-click').on('click', function () {
 				$(this).text('Clicked');
+				return false;
 			});
 		});
     

@@ -1,98 +1,348 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Hello space!</title>
+	<link rel="stylesheet" href="jquery.mobile-1.1.0.min.css" />
+	<!--<script src="jquery-1.7.1.min.js" type="text/javascript"></script>-->
+	<script src="jquery-1.10.2.min.js" type="text/javascript"></script>
+	<!--<script src="jquery.mobile-1.1.0.min.js"></script>-->
+	<script src="jquery.mobile-1.3.2.min.js"></script>
+	<script src="jquery-ui-1.10.3.custom.min.js"></script>
+    <script src="highcharts-3.0.2.min.js" type="text/javascript"></script>
+	<script src="d3.v3.min.js" type="text/javascript"></script>
+	<script type="text/javascript">
+		$(function () {
+			$('#container').highcharts({
+				title: {
+					text: 'Monthly Average Temperature',
+					x: -20 //center
+				},
+				subtitle: {
+					text: 'Source: WorldClimate.com',
+					x: -20
+				},
+				xAxis: {
+					categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+						'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+				},
+				yAxis: {
+					title: {
+						text: 'Temperature (°C)'
+					},
+					plotLines: [{
+						value: 0,
+						width: 1,
+						color: '#808080'
+					}]
+				},
+				tooltip: {
+					valueSuffix: '°C'
+				},
+				legend: {
+					layout: 'vertical',
+					align: 'right',
+					verticalAlign: 'middle',
+					borderWidth: 0
+				},
+				series: [{
+					name: 'Tokyo',
+					data: [7.0, 6.9, 9.5, 14.5, 18.2, 21.5, 25.2, 26.5, 23.3, 18.3, 13.9, 9.6]
+				}, {
+					name: 'New York',
+					data: [-0.2, 0.8, 5.7, 11.3, 17.0, 22.0, 24.8, 24.1, 20.1, 14.1, 8.6, 2.5]
+				}, {
+					name: 'Berlin',
+					data: [-0.9, 0.6, 3.5, 8.4, 13.5, 17.0, 18.6, 17.9, 14.3, 9.0, 3.9, 1.0]
+				}, {
+					name: 'London',
+					data: [3.9, 4.2, 5.7, 8.5, 11.9, 15.2, 17.0, 16.6, 14.2, 10.3, 6.6, 4.8]
+				}]
+			});
+			
+			
+			var data= [{
+					name: 'Tokyo',
+					data: [30, 20, 25, 30, 10, 15, 25, 26, 40, 50]
+				}, {
+					name: 'New York',
+					data: [20, 10, 15, 25, 25, 22, 24, 24, 20, 14]
+				}, {
+					name: 'Berlin',
+					data: [30, 13, 30, 25, 13, 17, 18, 17, 14, 9]
+				}, {
+					name: 'London',
+					data: [45, 42, 57, 48, 38, 33, 17, 16, 14, 10]
+				}]
+				
+			function bubbleChart () {
+				
+				var bubbleContainer = $('#bubble-container');
+				var width = bubbleContainer.width();
+				var height = bubbleContainer.height();
+				var vis = d3.select("#bubble-container").append("svg")
+				.attr("width", width)
+				.attr("height", height)
+				.attr("class", "bubble");
 
-<!-- config.xml reference: https://build.phonegap.com/docs/config-xml -->
-<widget xmlns = "http://www.w3.org/ns/widgets"
-        xmlns:gap = "http://phonegap.com/ns/1.0"
-        id = "com.phonegap.hello-world"
-        version = "1.0.0">
+				updateBubbles(0);
 
-    <name>ESA App</name>
+				//Add the chart controls
+				var controlItems = '';
+				var itemsLen = 10;
+				console.log(width);
+				//Round the width down and then size the continer to fit so the slider handle corresponds with thte labels
+				var itemWidth = Math.round(width / itemsLen);
+				for (var c = 0; c < itemsLen; c++) {
+					controlItems += '<li class="null">' + c + '</li>';
+				}
+				$('#bubble-control').prepend('<ul>' + controlItems + '</ul)');
+				$('#bubble-control').find('ul').width(itemWidth * itemsLen);
+				//Add color specific styles to the chart controls
+				$('#bubble-control').find('li').css({
+					'width': itemWidth,
+					'float': 'left',
+					'list-style': 'none'
+				});
+				var currentPosition = 0;
+				$('#bubble-control').slider({
+					min: 0,
+					max: 10,
+					step: 1,
+					change: function (event, ui) {
+						//Update the bubbles
+						updateBubbles(ui.value);
+						currentPosition = ui.value;
+					},
+					slide: function (event, ui) {
+						if (ui.value != currentPosition)
+							updateBubbles(ui.value);
+					}
+				});
+				$('#bubble-control').find('.ui-slider-handle').css({
+					'width': '22px',
+					'background-color': "red"
+				});
+			};
 
-    <description>
-        ESA build app
-    </description>
+			var firstLoad = true;
+			function updateBubbles (index) {
+				var dataObj = buildBubbleChartData(data, index);
+				
+				//Get the svg element
+				var vis = d3.select("#bubble-container svg");
 
-    <author href="http://theguardian.com" email="mattyb1973@yahoo.com">
-        Matt
-    </author>
+				// DATA JOIN
+				// Join new data with old elements, if any.
+				var node = vis.selectAll("g.node")
+					.data(dataObj);
 
-    <!--
-Enable individual API permissions here.
-The "device" permission is required for the 'deviceready' event.
--->
-    <feature name="http://api.phonegap.com/1.0/device" />
+				// UPDATE
+				// Update old elements as needed.
+				node.transition()
+					.duration(500)
+					.attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; })
+					.select('circle')
+					.attr("r", function (d) { return d.r; });
+				node.select('.percent')
+					.text(function (d) { return d.z + "%"; });
+				node.select('.name')
+					.text(function (d) { return d.name; });
 
-    <!--
-If you do not want any permissions to be added to your app, add the
-following tag to your config.xml; you will still have the INTERNET
-permission on your app, which PhoneGap requires.
--->
-    <preference name="permissions" value="none"/>
+				// ENTER
+				// Create new elements as needed.
+				var nodeEnter = node.enter().append("g")
+					.attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; })
+					.attr("class", "node");
 
-    <!-- Customize your app and platform with the preference element. -->
-    <preference name="phonegap-version" value="2.9.0" /> <!-- all: current version of PhoneGap -->
-    <preference name="orientation" value="default" /> <!-- all: default means both landscape and portrait are enabled -->
-    <preference name="target-device" value="universal" /> <!-- all: possible values handset, tablet, or universal -->
-    <preference name="fullscreen" value="true" /> <!-- all: hides the status bar at the top of the screen -->
-    <preference name="webviewbounce" value="true" /> <!-- ios: control whether the screen 'bounces' when scrolled beyond the top -->
-    <preference name="prerendered-icon" value="true" /> <!-- ios: if icon is prerendered, iOS will not apply it's gloss to the app's icon on the user's home screen -->
-    <preference name="stay-in-webview" value="false" /> <!-- ios: external links should open in the default browser, 'true' would use the webview the app lives in -->
-    <preference name="ios-statusbarstyle" value="black-opaque" /> <!-- ios: black-translucent will appear black because the PhoneGap webview doesn't go beneath the status bar -->
-    <preference name="detect-data-types" value="true" /> <!-- ios: controls whether data types (such as phone no. and dates) are automatically turned into links by the system -->
-    <preference name="exit-on-suspend" value="false" /> <!-- ios: if set to true, app will terminate when home button is pressed -->
-    <preference name="show-splash-screen-spinner" value="true" /> <!-- ios: if set to false, the spinner won't appear on the splash screen during app loading -->
-    <preference name="auto-hide-splash-screen" value="true" /> <!-- ios: if set to false, the splash screen must be hidden using a JavaScript API -->
-    <preference name="disable-cursor" value="false" /> <!-- blackberry: prevents a mouse-icon/cursor from being displayed on the app -->
-    <preference name="android-minSdkVersion" value="7" /> <!-- android: MIN SDK version supported on the target device. MAX version is blank by default. -->
-    <preference name="android-installLocation" value="auto" /> <!-- android: app install location. 'auto' will choose. 'internalOnly' is device memory. 'preferExternal' is SDCard. -->
+				nodeEnter.append('circle')
+					.attr("r", function (d) { return d.r; })
+					.style("fill", "#ffffff");
 
-    <!-- Plugins can also be added here. -->
-    <!--
-<gap:plugin name="Example" />
-A list of available plugins are available at https://build.phonegap.com/docs/plugins
--->
+				var textGroup = nodeEnter.append("g");
 
-    <!-- Define app icon for each platform. -->
-    <icon src="icon.png" />
-    <icon src="res/icon/android/icon-36-ldpi.png" gap:platform="android" gap:density="ldpi" />
-    <icon src="res/icon/android/icon-48-mdpi.png" gap:platform="android" gap:density="mdpi" />
-    <icon src="res/icon/android/icon-72-hdpi.png" gap:platform="android" gap:density="hdpi" />
-    <icon src="res/icon/android/icon-96-xhdpi.png" gap:platform="android" gap:density="xhdpi" />
-    <icon src="res/icon/blackberry/icon-80.png" gap:platform="blackberry" />
-    <icon src="res/icon/blackberry/icon-80.png" gap:platform="blackberry" gap:state="hover"/>
-    <icon src="res/icon/ios/icon-57.png" gap:platform="ios" width="57" height="57" />
-    <icon src="res/icon/ios/icon-72.png" gap:platform="ios" width="72" height="72" />
-    <icon src="res/icon/ios/icon-57-2x.png" gap:platform="ios" width="114" height="114" />
-    <icon src="res/icon/ios/icon-72-2x.png" gap:platform="ios" width="144" height="144" />
-    <icon src="res/icon/webos/icon-64.png" gap:platform="webos" />
-    <icon src="res/icon/windows-phone/icon-48.png" gap:platform="winphone" />
-    <icon src="res/icon/windows-phone/icon-173.png" gap:platform="winphone" gap:role="background" />
+				// EXIT
+				// Remove old elements as needed.
+				node.exit().remove();
+				if (firstLoad)
+					vis.selectAll('g.node g').each(insertTextGroup);
+				
+				function insertTextGroup (d) {
+					firstLoad = false;
+					var textGroup = d3.select(this);
+					textGroup.text('');
 
-    <!-- Define app splash screen for each platform. -->
-    <gap:splash src="res/screen/android/screen-ldpi-portrait.png" gap:platform="android" gap:density="ldpi" />
-    <gap:splash src="res/screen/android/screen-mdpi-portrait.png" gap:platform="android" gap:density="mdpi" />
-    <gap:splash src="res/screen/android/screen-hdpi-portrait.png" gap:platform="android" gap:density="hdpi" />
-    <gap:splash src="res/screen/android/screen-xhdpi-portrait.png" gap:platform="android" gap:density="xhdpi" />
-    <gap:splash src="res/screen/blackberry/screen-225.png" gap:platform="blackberry" />
-    <gap:splash src="res/screen/ios/screen-iphone-portrait.png" gap:platform="ios" width="320" height="480" />
-    <gap:splash src="res/screen/ios/screen-iphone-portrait-2x.png" gap:platform="ios" width="640" height="960" />
-    <gap:splash src="res/screen/ios/screen-ipad-portrait.png" gap:platform="ios" width="768" height="1024" />
-    <gap:splash src="res/screen/ios/screen-ipad-landscape.png" gap:platform="ios" width="1024" height="768" />
-    <gap:splash src="res/screen/windows-phone/screen-portrait.jpg" gap:platform="winphone" />
+					textGroup.append("text")
+						.attr("x", 5)
+						.attr("y", 115)
+						.text(function (d) { return d.z + "%"; })
+						.attr("fill", "#fff")
+						.attr('class', 'percent')
+						.attr("font-size", "13px");
+					var words = d.name.split(' ');
 
-    <!--
-Define access to external domains.
+					var yPos = 130;
+					for (var i = 0; i < words.length; i++) {
+						var txtStr = words[i].replace(/~/g, ' ');
+						textGroup.append("text")
+							.attr("x", 5)
+							.attr("y", yPos)
+							.text(function () { return txtStr; })
+							.attr("fill", "#fff")
+							.attr("font-size", "10px");
+						yPos += 15;
+					}
 
-<access /> - a blank access tag denies access to all external resources.
-<access origin="*" /> - a wildcard access tag allows access to all external resource.
+					textGroup.append("rect")
+					.attr("x", 0)
+					.attr("y", 0)
+					.attr("width", 1)
+					.attr("height", 130)
+					.attr("fill", '#ffffff');
+				};
+			};
+			function buildBubbleChartData (data, index) {
+				//Build chart data
+				var dataObj = [],
+					xPositions = [];
+				var valOrder = sortObjectVals(data, index);
+				var order = objectOrder(data, index);
 
-Otherwise, you can specify specific domains:
--->
-    <access origin="http://127.0.0.1*"/> <!-- allow local pages -->
-    <!--
-<access origin="http://phonegap.com" /> - allow any secure requests to http://phonegap.com/
-<access origin="http://phonegap.com" subdomains="true" /> - same as above, but including subdomains, such as http://build.phonegap.com/
-<access origin="http://phonegap.com" browserOnly="true" /> - only allows http://phonegap.com to be opened by the child browser.
--->
+				var highNum = valOrder[0] + 5;
+				var gutter;
+				var totVals = 0;
+				//Work out the gutter + scale
+				for (var g = 0; g < data.length; g++) {
+					totVals += valOrder[g];
+				}
+				var scale = totVals > 100 ? 0.6 : 1.8;
+				//Work out the xPos of each item
+				var xPos = valOrder[0] * scale;
+				for (var p = 0; p < data.length; p++) {
+					if (xPos > 630) xPos = xPos - 10; // mb quick win
+					xPositions.push(xPos);
+					if (valOrder.length <= 6)
+						gutter = (700 - ((totVals * 2) * scale)) / (valOrder.length + 1);
+					else
+						gutter = (highNum - valOrder[p]) / 1.65;
+					if (p != data.length - 1)
+						xPos += ((valOrder[p] * scale) + (valOrder[p] * scale)) + gutter;
+				}
 
-</widget>
+				//Add the data objects to the array
+				for (var i = 0; i < data.length; i++) {
+					//Where is this item in the order list
+					var itemIndex = $.inArray(data[i].name, order);
+					dataObj.push({
+						name: data[i].name,
+						x: xPositions[itemIndex],
+						y: 150,
+						r: data[i].data[index] * scale,
+						z: data[i].data[index]
+					});
+				}
+				return dataObj;
+			}
+
+			function objectOrder(series, index) {
+				var sortedableArray = [],
+					sortedVals = [];
+				for (var i = 0; i < series.length; i++) {
+					sortedableArray.push(series[i].data[index]);
+				}
+				for (var s = 0; s < series.length; s++) {
+					var highNumInd = sortedableArray.indexOf(Math.max.apply(window, sortedableArray));
+					sortedVals.push(series[highNumInd].name);
+					sortedableArray[highNumInd] = null;
+				}
+				return sortedVals;
+			};
+
+			function sortObjectVals(series, index) {
+				var sortedableArray = [],
+					sortedVals = [];
+				for (var i = 0; i < series.length; i++) {
+					sortedableArray.push(series[i].data[index]);
+				}
+				for (var s = 0; s < series.length; s++) {
+					var highNumInd = sortedableArray.indexOf(Math.max.apply(window, sortedableArray));
+					sortedVals.push(sortedableArray[highNumInd]);
+					sortedableArray[highNumInd] = null;
+				}
+				return sortedVals;
+			};
+			
+			var bubbleChartObj = new bubbleChart();
+		});
+    
+	</script>
+</head>
+<body>
+	
+	<!-- Start of first page: #one -->
+	<div data-role="page" id="one">
+
+		<div data-role="header">
+			<h1>ESA App</h1>
+		</div><!-- /header -->
+
+		<div data-role="content" >	
+			<h2>One</h2>
+			
+			<p>This is space yo!</p>	
+			<div id="container" style="width: 100%; height: 200px;"></div>
+	
+			<h3>Show internal pages:</h3>
+			<p><a href="#two" data-role="button" data-transition="slide">Show page "two"</a></p>	
+			<p><a href="#popup" data-role="button" data-rel="dialog" data-transition="pop">Show page "popup" (as a dialog)</a></p>
+		</div><!-- /content -->
+		
+		<div data-role="footer" data-theme="d">
+			<h4>Page Footer</h4>
+		</div><!-- /footer -->
+	</div><!-- /page one -->
+
+
+	<!-- Start of second page: #two -->
+	<div data-role="page" id="two" data-theme="a">
+
+		<div data-role="header">
+			<h1>Two</h1>
+		</div><!-- /header -->
+
+		<div data-role="content" data-theme="a">	
+			<h2>Two</h2>
+			<p>More space yo!</p>	
+			<div id="bubble-control" style="width: 700px; height: 50px;"></div>
+			<div id="bubble-container" style="width: 700px; height: 400px"></div>
+			<p><a href="#one" data-direction="reverse" data-role="button" data-theme="b" data-transition="slide">Back to page "one"</a></p>	
+			
+		</div><!-- /content -->
+		
+		<div data-role="footer">
+			<h4>Page Footer</h4>
+		</div><!-- /footer -->
+	</div><!-- /page two -->
+
+
+	<!-- Start of third page: #popup -->
+	<div data-role="page" id="popup">
+
+		<div data-role="header" data-theme="e">
+			<h1>Dialog</h1>
+		</div><!-- /header -->
+
+		<div data-role="content" data-theme="d">	
+			<h2>Popup</h2>
+			<p>This is a popup yo!</p>		
+			<p><a href="#one" data-rel="back" data-role="button" data-inline="true" data-icon="back">Back to page "one"</a></p>	
+		</div><!-- /content -->
+		
+		<div data-role="footer">
+			<h4>Page Footer</h4>
+		</div><!-- /footer -->
+	</div><!-- /page popup -->
+
+	
+</body>
+</html>
